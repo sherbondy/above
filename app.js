@@ -17,6 +17,7 @@ var elementSizes = {};
 var subgroupTotals = {};
 
 var groupCosts = {};
+var grandTotal = 0;
 
 // dimensions to keep for square footage measurements...
 var dimensionsToKeep = {
@@ -204,6 +205,14 @@ function recalculateCosts(){
             groupCosts[namePrefix] = cost;
         }
     }
+
+    for (const groupName in groupCosts) {
+        grandTotal += groupCosts[groupName];
+    }
+
+    const prettyGrandTotal = formatMoney(grandTotal);
+
+    $("#grand-total").text(prettyGrandTotal);
 }
 
 function formatMoney(amount) {
