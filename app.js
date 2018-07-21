@@ -29,7 +29,7 @@ function main() {
     // camera
     window.camera = new THREE.PerspectiveCamera(30, 600 / 600, 1, 10000);
 
-    const controls = new THREE.OrbitControls( camera );
+    const controls = new THREE.OrbitControls( camera, renderer.domElement );
 
     camera.position.set(0, -300, 300);
     camera.up.set(0, 1, 0);
