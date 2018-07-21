@@ -76,13 +76,13 @@ function addSpotLight(scene) {
 function main() {
     // renderer
     const renderer = new THREE.WebGLRenderer({antialias: true});
-    renderer.setSize(600, 600);
+    renderer.setSize(800, 600);
 
     const container = document.getElementById('canvas-container');
     container.appendChild(renderer.domElement);
 
     // camera
-    window.camera = new THREE.PerspectiveCamera(30, 600 / 600, 1, 10000);
+    window.camera = new THREE.PerspectiveCamera(30, 800 / 600, 1, 10000);
 
     const controls = new THREE.OrbitControls( camera, renderer.domElement );
 
@@ -212,7 +212,10 @@ $(function(){
            for (var j = 0; j < polyLoops.length; j+=1) {
                const points = polyLoops[j].getElementsByTagName("CartesianPoint");
 
+               const startingVertex = vertexCount;
+
                for (var k = 0; k < points.length; k+=1) {
+                   console.log(points.length);
                    const coords = points[k].getElementsByTagName("Coordinate");
                    const x = coordFloat(coords[0]);
                    const y = coordFloat(coords[1]);
@@ -223,6 +226,8 @@ $(function(){
                    vertexCount += 1;
                }
 
+               // (A, B, C), (A, C, D)
+               
                const faceA = new THREE.Face3(vertexCount - 4, vertexCount - 3, vertexCount - 2);
                const faceB = new THREE.Face3(vertexCount - 4, vertexCount - 2, vertexCount - 1);
 

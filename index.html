@@ -5,7 +5,7 @@
 		<meta charset="UTF-8">
 		<title>Above Dashboard</title>
 		<link rel="stylesheet" type="text/css" href="dist/toolkit-inverse.css">
-        <link rel="stylesheet" type="text/css" href="app.css?v=3">
+        <link rel="stylesheet" type="text/css" href="app.css?v=5">
 
         <script type="text/javascript" src="dist/jquery.min.js"></script>
         <script type="text/javascript" src="dist/popper.min.js"></script>
@@ -20,7 +20,43 @@
 	<body>
         <div class="container">
             <div class="row">
-                <div class="col-sm-12 content">
+                <div class="col-md-3 sidebar">
+                    <nav class="sidebar-nav">
+                        <div class="sidebar-header">
+                            <button class="nav-toggler nav-toggler-md sidebar-toggler" type="button" data-toggle="collapse" data-target="#nav-toggleable-md">
+                                <span class="sr-only">Toggle nav</span>
+                            </button>
+                            <a class="sidebar-brand img-responsive" href="#">
+                                <span class="icon icon-logo sidebar-brand-icon"></span>
+                            </a>
+                        </div>
+
+                        <div class="collapse nav-toggleable-md" id="nav-toggleable-md">
+                            <form class="sidebar-form">
+                                <input class="form-control" type="text" placeholder="Search...">
+                                <button type="submit" class="btn-link">
+                                    <span class="icon icon-magnifying-glass"></span>
+                                </button>
+                            </form>
+                            <!--<ul class="nav nav-pills nav-stacked flex-column">-->
+                                <!--<li class="nav-header">Dashboards</li>-->
+                                <!--<li class="nav-item">-->
+                                    <!--<a class="nav-link active" href="#">Overview</a>-->
+                                <!--</li>-->
+                            <!--</ul>-->
+                            <hr class="visible-xs mt-3">
+
+
+                            <div class="model-groups-box">
+                                <div class="list-group" id="model-groups">
+                                    <div class="list-group-header">Component Groups</div>
+                                </div>
+                            </div>
+                        </div>
+                    </nav>
+                </div>
+
+                <div class="col-md-9 content">
                     <div class="dashhead">
                         <div class="dashhead-titles">
                             <h6 class="dashhead-subtitle">Above Dashboards</h6>
@@ -31,13 +67,7 @@
                     <hr class="mt-3">
 
                     <div class="row text-center mt-5">
-                        <div id="canvas-container" class="col-sm-8"></div>
-
-                        <div class="col-sm-4 model-groups-box">
-                            <div class="list-group" id="model-groups">
-                                <div class="list-group-header">Component Groups</div>
-                            </div>
-                        </div>
+                        <div id="canvas-container" class="col-sm-12"></div>
                     </div>
                 </div>
             </div>
