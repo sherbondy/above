@@ -28,9 +28,15 @@ hr {
 }
 
 .model-groups-box {
-  height: 500px;
+  height: 420px;
   overflow: scroll;
 }
+
+.child-element-box {
+    height: 320px;
+    overflow: scroll;
+}
+
 
 .icon-logo {
     background: url("img/logo_palette.svg") center center / 40px 40px no-repeat;

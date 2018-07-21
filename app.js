@@ -313,13 +313,13 @@ $(function(){
     window.main = function() {
         // renderer
         const renderer = new THREE.WebGLRenderer({antialias: true});
-        renderer.setSize(800, 600);
+        renderer.setSize(800, 500);
 
         const container = document.getElementById('canvas-container');
         container.appendChild(renderer.domElement);
 
         // camera
-        window.camera = new THREE.PerspectiveCamera(30, 800 / 600, 1, 10000);
+        window.camera = new THREE.PerspectiveCamera(30, 800 / 500, 1, 10000);
 
         const controls = new THREE.OrbitControls( camera, renderer.domElement );
 
