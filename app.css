@@ -45,10 +45,19 @@ hr {
     display: block;
 }
 
+#cost-summary {
+    max-height: 600px;
+    overflow: scroll;
+}
+
 @media (min-width: 768px) {
     .icon-logo {
         width: 80px;
         height: 80px;
         background-size: contain;
+    }
+
+    .container {
+        max-width: 1400px;
     }
 }

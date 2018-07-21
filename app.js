@@ -20,6 +20,8 @@ var subgroupTotals = {};
 var groupCosts = {};
 var grandTotal = 0;
 
+var searchText = "";
+
 // dimensions to keep for square footage measurements...
 var dimensionsToKeep = {
     'Basic': {y: true, z: true},
@@ -231,12 +233,21 @@ function renderGroupsList(){
 
         const groupCostInt = formatMoney(groupCost);
 
+        const costFraction = (grandTotal > 0) ? ((groupCost / grandTotal) * 100) : 0;
+
+        const costFractionInt = parseInt(costFraction);
+
         const activeText = (groupName == activeGroup) ? "active" : "";
 
         modelChildrenList.append(
-            `<a class="list-group-item list-group-item-action model-group ${activeText}"
+            `<a class="list-group-item list-group-item-action model-group justify-content-between d-flex ${activeText}"
                         data-name="${groupName}">
+                        
+                <span class="list-group-progress" style="width:${costFraction}%"></span>
+                
                 ${groupName}: $${groupCostInt}
+                
+                <span class="ml-a text-muted">${costFractionInt}%</span>
             </a>`
         );
     }
@@ -297,10 +308,9 @@ function renderSubgroupTotals(activeSubgroups){
         $("#cost-summary").append(
             `<div class="card">
                     <div class="card-body">
-                        <h4 class="card-title">${prettyName}</h4>
+                        <h4 class="card-title">${prettyName} (${totals.count}x)</h4>
                         <p><strong>Pick Material</strong>: ${subgroupSelect}</p>
                         <p><strong>Total Cost</strong>: $${totalCostPretty}</p>
-                        <p><strong>Count</strong>: ${totals.count}</p>
                         <p><strong>Square Footage Total</strong>: ${niceSquareFootage} ft^2</p>
                     </div>
                 </div>`
@@ -385,13 +395,16 @@ $(function(){
     window.main = function() {
         // renderer
         const renderer = new THREE.WebGLRenderer({antialias: true});
-        renderer.setSize(800, 500);
+
+        const contentWidth = $(".content").width();
+
+        renderer.setSize(contentWidth, 500);
 
         const container = document.getElementById('canvas-container');
         container.appendChild(renderer.domElement);
 
         // camera
-        window.camera = new THREE.PerspectiveCamera(30, 800 / 500, 1, 10000);
+        window.camera = new THREE.PerspectiveCamera(30, contentWidth / 500, 1, 10000);
 
         const controls = new THREE.OrbitControls( camera, renderer.domElement );
 
@@ -402,6 +415,9 @@ $(function(){
 
         // scene and lights
         const scene = new THREE.Scene();
+
+        scene.background = new THREE.Color("rgb(37, 40, 48)");
+
         scene.add(new THREE.AmbientLight(0xcccccc, 0.5));
 
         const directionalLight = new THREE.DirectionalLight( 0xffffff, 0.75 );
