@@ -2,6 +2,28 @@
 
 /*globals THREE */
 
+var sceneModel = null;
+var activeChildNode = null;
+
+
+const defaultMaterial = new THREE.MeshPhongMaterial(
+    {
+        color: 0xffffff,
+        specular: 0xffffff,
+        shininess: 50
+    }
+);
+
+const highlightMaterial = new THREE.MeshPhongMaterial(
+    {
+        color: 0xff000,
+        specular: 0xffffff,
+        shininess: 50
+    }
+);
+
+
+
 function addSpotLight(scene) {
     var spotLight = new THREE.SpotLight( 0xffffff );
     spotLight.position.set( 100, 1000, 100 );
@@ -57,26 +79,9 @@ function main() {
     const objs = [];
     const loader = new THREE.FBXLoader();
 
-    const defaultMaterial = new THREE.MeshPhongMaterial(
-        {
-            color: 0x555555,
-            specular: 0xffffff,
-            shininess: 50
-        }
-    );
-
-    const highlightMaterial = new THREE.MeshPhongMaterial(
-        {
-            color: 0xff000,
-            specular: 0xffffff,
-            shininess: 50
-        }
-    );
-
-
 
     loader.load("./schoolhouse.fbx", model => {
-        window.schoolhouse = model;
+        sceneModel = model;
 
         directionalLight.target = model;
 
@@ -85,7 +90,7 @@ function main() {
         model.children.forEach(function(child){
             if (child.isMesh) {
                 console.log("Child:", child.name);
-                child.material = highlightMaterial;
+                child.material = defaultMaterial;
 
                 modelChildrenList.append(
                     `<a class="list-group-item list-group-item-action model-child"
@@ -123,6 +128,21 @@ $(function(){
    console.log("loaded");
 
    $("#model-children").on('click', '.model-child', function(e){
-       console.log("clicked child", $(this).data('id'));
+       const childID = $(this).data('id');
+       console.log("clicked child", childID);
+       activeChildNode = childID;
+
+       $('.model-child').removeClass('active');
+       $(this).addClass('active');
+
+       sceneModel.children.forEach(function(child) {
+           if (child.isMesh) {
+               if (child.id == childID) {
+                   child.material = highlightMaterial;
+               } else {
+                   child.material = defaultMaterial;
+               }
+           }
+       });
    });
 });
