@@ -41,6 +41,75 @@ var dimensionsToKeep = {
     'Top': {x: true, z: true}
 };
 
+var CEILING_OPTIONS = [{'Drywall': 23}, {'ACT': 50}];
+var EXTERIOR_OPTIONS = [{'Masonry Veneer': 240}, {'Fiber Cement': 180}];
+var WALL_OPTIONS = [{'GYP Paint': 20}, {'Wall Covering': 30}];
+var ROOF_OPTIONS = [{'Acoustic Deck Assembly': 50}];
+var WINDOW_OPTIONS = [{'Double Glazed': 100}, {'Triple Glazed': 150}];
+var DOOR_OPTIONS = [{'Solid Fill Acoustic': 250}, {'HMF Aluminum': 300}];
+var CHAIR_OPTIONS = [{'IKEA Armchair': 80}];
+var TABLE_OPTIONS = [{'IKEA Table': 120}];
+var DESK_OPTIONS = [{'IKEA Desk': 80}];
+var GLAZING_OPTIONS = [{'Glazing Option 1': 80}, {'Glazing Option 2': 100}];
+var MULLION_OPTIONS = [{'Mullion': 2}];
+var COUNTER_OPTIONS = [{'Wood Counter Top': 100}];
+var FLOOR_OPTIONS = [{'VCT': 20}, {'Terrazzo': 50}];
+
+var EMPTY_MATERIAL_OPTIONS = [{'Default': 0}];
+
+var materialOptions = {
+    'Basic_Wall_Exterior_-_Dark_Brick_on_CMU': EXTERIOR_OPTIONS,
+    'Basic_Roof_Generic_-_12"': ROOF_OPTIONS,
+    'Basic_Wall_Interior_-_5_12"_Partition_(1-hr)': WALL_OPTIONS,
+    'Basic_Wall_Interior_-_6_18"_Partition_(2-hr)': WALL_OPTIONS,
+    'Basic_Wall_Interior_-_5"_Partition_(2-hr)': WALL_OPTIONS,
+    'Floor_Generic_-_12"': FLOOR_OPTIONS,
+    "Compound_Ceiling_2'_x_4'_ACT_System": CEILING_OPTIONS,
+    "Compound_Ceiling_1'_x_4'_ACT_Ceiling": CEILING_OPTIONS,
+    "Compound_Ceiling_2'_x_2'_ACT_System": CEILING_OPTIONS,
+    "Compound_Ceiling_GWB_on_Mtl_Stud": CEILING_OPTIONS,
+    "System_Panel_Glazed": GLAZING_OPTIONS,
+    'Rectangular_Mullion_25"_x_5"_rectangular': MULLION_OPTIONS,
+    // per unit...
+    'Door-Passage-Single-Two_Lite_Narrow_42"_x_94"': DOOR_OPTIONS,
+    'Door-Double-Flush_Panel_40"_x_84"': DOOR_OPTIONS,
+    'Fixed_36"_x_96"': WINDOW_OPTIONS,
+    'Desk_72"_x_36"': DESK_OPTIONS,
+    'Chair-Task_Arms_Chair-Task_Arms': CHAIR_OPTIONS,
+    'Table-Dining_Round_w_Chairs_36"_Diameter': TABLE_OPTIONS,
+    'Chair-Breuer_Chair-Breuer': CHAIR_OPTIONS,
+    'Door-Exterior-Double-Two_Lite_96"_x_84"': DOOR_OPTIONS,
+    'Counter_Top_24"_Depth': COUNTER_OPTIONS,
+    'Door-Double-Flush_Panel_68"_x_84"': DOOR_OPTIONS
+};
+
+// index of selected material for component
+var materialSelections = {
+    'Basic_Wall_Exterior_-_Dark_Brick_on_CMU': 0,
+    'Basic_Roof_Generic_-_12"': 0,
+    'Basic_Wall_Interior_-_5_12"_Partition_(1-hr)': 0,
+    'Basic_Wall_Interior_-_6_18"_Partition_(2-hr)': 0,
+    'Basic_Wall_Interior_-_5"_Partition_(2-hr)': 0,
+    'Floor_Generic_-_12"': 0,
+    "Compound_Ceiling_2'_x_4'_ACT_System": 0,
+    "Compound_Ceiling_1'_x_4'_ACT_Ceiling": 0,
+    "Compound_Ceiling_2'_x_2'_ACT_System": 0,
+    "Compound_Ceiling_GWB_on_Mtl_Stud": 0,
+    "System_Panel_Glazed": 0,
+    'Rectangular_Mullion_25"_x_5"_rectangular': 0,
+    // per unit...
+    'Door-Passage-Single-Two_Lite_Narrow_42"_x_94"': 0,
+    'Door-Double-Flush_Panel_40"_x_84"': 0,
+    'Fixed_36"_x_96"': 0,
+    'Desk_72"_x_36"': 0,
+    'Chair-Task_Arms_Chair-Task_Arms': 0,
+    'Table-Dining_Round_w_Chairs_36"_Diameter': 0,
+    'Chair-Breuer_Chair-Breuer': 0,
+    'Door-Exterior-Double-Two_Lite_96"_x_84"': 0,
+    'Counter_Top_24"_Depth': 0,
+    'Door-Double-Flush_Panel_68"_x_84"': 0
+};
+
 
 var materialCosts = {
     // sq ft...
@@ -104,143 +173,55 @@ function addSpotLight(scene) {
     scene.add(spotLight);
 }
 
-// simplified on three.js/examples/webgl_loader_fbx.html
-function main() {
-    // renderer
-    const renderer = new THREE.WebGLRenderer({antialias: true});
-    renderer.setSize(800, 600);
 
-    const container = document.getElementById('canvas-container');
-    container.appendChild(renderer.domElement);
+function recalculateCosts(){
+    groupCosts = {};
 
-    // camera
-    window.camera = new THREE.PerspectiveCamera(30, 800 / 600, 1, 10000);
+    for (const subgroupName in subgroupTotals) {
+        const namePrefix = subgroupName.split('_')[0];
+        const selectedMaterialIndex = materialSelections[subgroupName];
 
-    const controls = new THREE.OrbitControls( camera, renderer.domElement );
+        const subgroupMaterialOptions = materialOptions[subgroupName] || EMPTY_MATERIAL_OPTIONS;
+        const baseCostMap = subgroupMaterialOptions[0];
+        const baseCost = Object.values(baseCostMap)[0] || 0;
 
-    camera.position.set(0, -300, 300);
-    camera.up.set(0, 0, 1);
-    camera.lookAt(new THREE.Vector3(20, 20, 100));
-    controls.update();
+        console.log(subgroupName, selectedMaterialIndex, baseCost);
 
-    // scene and lights
-    const scene = new THREE.Scene();
-    scene.add(new THREE.AmbientLight(0xcccccc, 0.5));
+        const useUnitCost = dimensionsToKeep[namePrefix]["unit"] === true;
+        var cost = 0;
 
-    const directionalLight = new THREE.DirectionalLight( 0xffffff, 0.75 );
-    directionalLight.position.set( new THREE.Vector3(100, 1000, 100) );
-    // scene.add(directionalLight);
-
-    addSpotLight(scene);
-
-    // debug box
-    const box = new THREE.Box3();
-    box.setFromCenterAndSize( new THREE.Vector3( 1, 1, 1 ), new THREE.Vector3( 2, 1, 3 ) );
-
-    const helper = new THREE.Box3Helper( box, 0xffff00 );
-    scene.add( helper );
-
-    // load fbx model and texture
-    const objs = [];
-    const loader = new THREE.FBXLoader();
-
-
-    loader.load("./schoolhouse.fbx", model => {
-        sceneModel = model;
-
-        var box = new THREE.Box3().setFromObject( model );
-        box.center( model.position ); // this re-sets the mesh position
-        model.position.multiplyScalar( - 1 );
-
-        directionalLight.target = model;
-
-        const modelChildrenList = $("#model-groups");
-
-        model.children.forEach(function(child){
-            if (child.isMesh) {
-                // console.log("Child:", child.name);
-                child.material = defaultMaterial;
-
-                var namePrefix = child.name.split('_')[0];
-                if (namePrefix in modelGroups){
-                    modelGroups[namePrefix].push(child.id);
-                } else {
-                    modelGroups[namePrefix] = [child.id];
-                }
-
-                const bbox = new THREE.Box3().setFromObject(child);
-                elementSizes[child.id] = bbox.getSize();
-
-
-                const subgroupName = getSubgroupName(child);
-
-                let childSize = elementSizes[child.id];
-                let squareFootage = getSquareFootage(namePrefix, childSize);
-
-                if (subgroupName in subgroupTotals) {
-                    subgroupTotals[subgroupName]['count'] += 1;
-                    subgroupTotals[subgroupName]['totalSquareFootage'] += squareFootage;
-                } else {
-                    subgroupTotals[subgroupName] = {
-                        'count': 1,
-                        'totalSquareFootage': squareFootage,
-                        'cost': 0
-                    }
-                }
-            }
-        });
-
-        for (const subgroupName in subgroupTotals) {
-            const namePrefix = subgroupName.split('_')[0];
-            const baseCost = materialCosts[subgroupName] || 0;
-
-            const useUnitCost = dimensionsToKeep[namePrefix]["unit"] === true;
-            var cost = 0;
-
-            if (useUnitCost) {
-                cost = subgroupTotals[subgroupName]['count'] * baseCost;
-            } else {
-                cost = subgroupTotals[subgroupName]['totalSquareFootage'] * baseCost;
-            }
-
-            subgroupTotals[subgroupName]['cost'] = cost;
-
-            if (namePrefix in groupCosts) {
-                groupCosts[namePrefix] += cost;
-            } else {
-                groupCosts[namePrefix] = cost;
-            }
+        if (useUnitCost) {
+            cost = subgroupTotals[subgroupName]['count'] * baseCost;
+        } else {
+            cost = subgroupTotals[subgroupName]['totalSquareFootage'] * baseCost;
         }
 
+        subgroupTotals[subgroupName]['cost'] = cost;
 
-        for (const groupName in modelGroups) {
-            modelChildrenList.append(
-                `<a class="list-group-item list-group-item-action model-group"
-                        data-name="${groupName}">
-                        ${groupName}
-                    </a>`
-            );
+        if (namePrefix in groupCosts) {
+            groupCosts[namePrefix] += cost;
+        } else {
+            groupCosts[namePrefix] = cost;
         }
-
-        scene.add(model);
-        objs.push(model);
-    });
-
-    // animation rendering
-    const clock = new THREE.Clock();
-
-    (function animate() {
-        controls.update();
-
-        renderer.render(scene, camera);
-
-        requestAnimationFrame(animate);
-    })();
-
-    return objs;
+    }
 }
 
-const objs = main();
+function renderGroupsList(){
+    const modelChildrenList = $("#model-groups");
+
+    modelChildrenList.html("");
+
+    for (const groupName in modelGroups) {
+        const groupCost = groupCosts[groupName];
+
+        modelChildrenList.append(
+            `<a class="list-group-item list-group-item-action model-group"
+                        data-name="${groupName}">
+                ${groupName}: $${groupCost}
+            </a>`
+        );
+    }
+}
 
 
 // pull room colors from palette...
@@ -268,9 +249,145 @@ function getSquareFootage(group, childSize) {
     return squareFootage;
 }
 
+function renderSubgroupTotals(activeSubgroups){
+
+    for (const subgroupName in activeSubgroups) {
+        const totals = subgroupTotals[subgroupName];
+        const niceSquareFootage = parseInt(totals.totalSquareFootage);
+        const totalCost = parseInt(totals.cost);
+
+        $("#cost-summary").append(
+            `<div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title">${subgroupName} Total Measurements</h4>
+                        
+                        <p><strong>Total Cost</strong>: $${totalCost}</p>
+                        <p><strong>Count</strong>: ${totals.count}</p>
+                        <p><strong>Square Footage Total</strong>: ${niceSquareFootage} ft^2</p>
+                    </div>
+                </div>`
+        );
+    }
+}
+
 
 $(function(){
-   console.log("loaded");
+    console.log("loaded dom");
+
+
+// simplified on three.js/examples/webgl_loader_fbx.html
+    window.main = function() {
+        // renderer
+        const renderer = new THREE.WebGLRenderer({antialias: true});
+        renderer.setSize(800, 600);
+
+        const container = document.getElementById('canvas-container');
+        container.appendChild(renderer.domElement);
+
+        // camera
+        window.camera = new THREE.PerspectiveCamera(30, 800 / 600, 1, 10000);
+
+        const controls = new THREE.OrbitControls( camera, renderer.domElement );
+
+        camera.position.set(0, -300, 300);
+        camera.up.set(0, 0, 1);
+        camera.lookAt(new THREE.Vector3(20, 20, 100));
+        controls.update();
+
+        // scene and lights
+        const scene = new THREE.Scene();
+        scene.add(new THREE.AmbientLight(0xcccccc, 0.5));
+
+        const directionalLight = new THREE.DirectionalLight( 0xffffff, 0.75 );
+        directionalLight.position.set( new THREE.Vector3(100, 1000, 100) );
+        // scene.add(directionalLight);
+
+        addSpotLight(scene);
+
+        // debug box
+        const box = new THREE.Box3();
+        box.setFromCenterAndSize( new THREE.Vector3( 1, 1, 1 ), new THREE.Vector3( 2, 1, 3 ) );
+
+        const helper = new THREE.Box3Helper( box, 0xffff00 );
+        scene.add( helper );
+
+        // load fbx model and texture
+        const objs = [];
+        const loader = new THREE.FBXLoader();
+
+
+        loader.load("./schoolhouse.fbx", model => {
+            sceneModel = model;
+
+            var box = new THREE.Box3().setFromObject( model );
+            box.center( model.position ); // this re-sets the mesh position
+            model.position.multiplyScalar( - 1 );
+
+            directionalLight.target = model;
+
+            model.children.forEach(function(child){
+                if (child.isMesh) {
+                    // console.log("Child:", child.name);
+                    child.material = defaultMaterial;
+
+                    var namePrefix = child.name.split('_')[0];
+                    if (namePrefix in modelGroups){
+                        modelGroups[namePrefix].push(child.id);
+                    } else {
+                        modelGroups[namePrefix] = [child.id];
+                    }
+
+                    const bbox = new THREE.Box3().setFromObject(child);
+                    elementSizes[child.id] = bbox.getSize();
+
+
+                    const subgroupName = getSubgroupName(child);
+
+                    let childSize = elementSizes[child.id];
+                    let squareFootage = getSquareFootage(namePrefix, childSize);
+
+                    if (subgroupName in subgroupTotals) {
+                        subgroupTotals[subgroupName]['count'] += 1;
+                        subgroupTotals[subgroupName]['totalSquareFootage'] += squareFootage;
+                    } else {
+                        subgroupTotals[subgroupName] = {
+                            'count': 1,
+                            'totalSquareFootage': squareFootage,
+                            'cost': 0
+                        }
+                    }
+                }
+            });
+
+            scene.add(model);
+            objs.push(model);
+
+
+            recalculateCosts();
+            renderGroupsList();
+        });
+
+        // animation rendering
+        const clock = new THREE.Clock();
+
+        (function animate() {
+            controls.update();
+
+            renderer.render(scene, camera);
+
+            requestAnimationFrame(animate);
+        })();
+
+        return objs;
+    }
+
+    const objs = main();
+
+
+
+    // now xml model...
+
+
 
     var colores_g = [
         "#3366cc", "#dc3912", "#ff9900", "#109618", "#990099", "#0099c6", "#dd4477", "#66aa00",
@@ -393,22 +510,8 @@ $(function(){
 
        $("#cost-summary").html("");
 
-       for (const subgroupName in activeSubgroups) {
-           const totals = subgroupTotals[subgroupName];
-           const niceSquareFootage = parseInt(totals.totalSquareFootage);
-           const totalCost = parseInt(totals.cost);
+       renderSubgroupTotals(activeSubgroups);
 
-           $("#cost-summary").append(
-               `<div class="card">
-                    <div class="card-body">
-                        <h4 class="card-title">${subgroupName} Total Measurements</h4>
-                        
-                        <p><strong>Total Cost</strong>: $${totalCost}</p>
-                        <p><strong>Count</strong>: ${totals.count}</p>
-                        <p><strong>Square Footage Total</strong>: ${niceSquareFootage} ft^2</p>
-                    </div>
-                </div>`
-           );
-       }
+
    });
 });
