@@ -126,7 +126,7 @@ function main() {
 
         model.children.forEach(function(child){
             if (child.isMesh) {
-                console.log("Child:", child.name);
+                // console.log("Child:", child.name);
                 child.material = defaultMaterial;
 
                 var namePrefix = child.name.split('_')[0];
@@ -172,8 +172,76 @@ function main() {
 const objs = main();
 
 
+// pull room colors from palette...
+
+function coordFloat(coord){
+    return parseFloat(coord.childNodes[0].nodeValue);
+}
+
+
 $(function(){
    console.log("loaded");
+
+    var colores_g = [
+        "#3366cc", "#dc3912", "#ff9900", "#109618", "#990099", "#0099c6", "#dd4477", "#66aa00",
+        "#b82e2e", "#316395", "#994499", "#22aa99", "#aaaa11", "#6633cc", "#e67300", "#8b0707",
+        "#651067", "#329262", "#5574a6", "#3b3eac"
+    ];
+
+    $.get("./schoolhouse.xml", function(response){
+       console.log("loaded schoolhouse gbxml file: ", response);
+       // Building -> Space -> Shell Geometry -> Closed Shell to three geometry with faces...
+       window.buildingSpec = response;
+       var campus = window.buildingSpec.getElementsByTagName("Campus")[0];
+       var building = campus.getElementsByTagName("Building")[0];
+       var spaces = building.getElementsByTagName("Space");
+
+       for (var i = 0; i < spaces.length; i+=1) {
+           const space = spaces[i];
+           const spaceNameNode = space.getElementsByTagName("Name")[0];
+           const spaceName = spaceNameNode.childNodes[0];
+
+           const geometry = space.getElementsByTagName("ShellGeometry")[0];
+           const shell = geometry.getElementsByTagName("ClosedShell")[0];
+           const polyLoops = shell.getElementsByTagName("PolyLoop");
+
+           var threeGeometry = new THREE.Geometry();
+
+           var vertexCount = 0;
+
+           for (var j = 0; j < polyLoops.length; j+=1) {
+               const points = polyLoops[j].getElementsByTagName("CartesianPoint");
+
+               for (var k = 0; k < points.length; k+=1) {
+                   const coords = points[k].getElementsByTagName("Coordinate");
+                   const x = coordFloat(coords[0]);
+                   const y = coordFloat(coords[1]);
+                   const z = coordFloat(coords[2]);
+                   const point = new THREE.Vector3(x, y, z);
+
+                   threeGeometry.vertices.push(point);
+                   vertexCount += 1;
+               }
+
+               const faceA = new THREE.Face3(vertexCount - 4, vertexCount - 3, vertexCount - 2);
+               const faceB = new THREE.Face3(vertexCount - 4, vertexCount - 2, vertexCount - 1);
+
+               threeGeometry.faces.push(faceA);
+               threeGeometry.faces.push(faceB);
+           }
+
+           threeGeometry.computeFaceNormals();
+           threeGeometry.computeVertexNormals();
+
+           const colorStr = colores_g[i % colores_g.length];
+           const threeColor = new THREE.Color(colorStr);
+
+           const spaceMaterial = new THREE.MeshStandardMaterial( { color : threeColor } );
+           const spaceMesh = new THREE.Mesh(threeGeometry, spaceMaterial);
+           sceneModel.add(spaceMesh);
+       }
+   });
+
 
    $("#model-groups").on('click', '.model-group', function(e){
        const groupName = $(this).data('name');
