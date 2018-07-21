@@ -2,11 +2,40 @@
 
 /*globals THREE */
 
+// 1 unit = 1 ft
+const unitsToFt = 8;
+
 var sceneModel = null;
 var activeGroup = null;
 
 // mapping from name prefix to array of elements in group...
 var modelGroups = {};
+
+// mapping from element id to bbox size in raw unit (need to convert to ft)...
+var elementSizes = {};
+
+// dimensions to keep for square footage measurements...
+var dimensionsToKeep = {
+    'Basic': {y: true, z: true},
+    'Floor': {x: true, y: true},
+    'Door-Passage-Single-Two': {y: true, z: true},
+    'Door-Double-Flush': {y: true, z: true},
+    'Fixed': {y: true, z: true},
+    'Desk': {x: true, y: true},
+    'Chair-Task': {x: true, y: true, z: true},
+    'Table-Dining': {x: true, y: true},
+    'Chair-Breuer': {x: true, y: true},
+    'Compound': {x: true, y: true},
+    'Door-Exterior-Double-Two': {x: true, z: true},
+    'Counter': {x: true, y: true},
+    'System': {y: true, z: true},
+    'Rectangular': {x: true, z: true},
+    // here be dragons...
+    'Non-Monolithic': {x: true, y: true},
+    'Stringer': {x: true, z: true},
+    'Railing': {x: true, z: true},
+    'Top': {x: true, z: true}
+};
 
 const defaultMaterial = new THREE.MeshPhongMaterial(
     {
@@ -106,6 +135,9 @@ function main() {
                 } else {
                     modelGroups[namePrefix] = [child.id];
                 }
+
+                const bbox = new THREE.Box3().setFromObject(child);
+                elementSizes[child.id] = bbox.getSize();
             }
         });
 
@@ -164,6 +196,11 @@ $(function(){
 
        childElementsList.html("");
 
+       var totalSize = new THREE.Vector3(0,0,0);
+       var totalSquareFootage = 0;
+
+       var subgroupTotals = {};
+
        sceneModel.children.forEach(function(child) {
            if (child.isMesh) {
                if (activeGroupChildren.includes(child.id)) {
@@ -171,18 +208,68 @@ $(function(){
 
                    // const center = child.geometry.boundingSphere.center;
 
+                   var splitName = child.name.split('_');
+                   var nameWithoutID = splitName.slice(0, -1);
+                   var subgroupName = nameWithoutID.join('_');
+
+
+                   var childSize = elementSizes[child.id];
+
+                   var squareFootage = 1;
+                   var areaDimensions = dimensionsToKeep[activeGroup];
+                   for (const dimension in areaDimensions) {
+                       squareFootage *= childSize[dimension];
+                   }
+
+
+                   if (subgroupName in subgroupTotals) {
+                       subgroupTotals[subgroupName]['count'] += 1;
+                       subgroupTotals[subgroupName]['totalSquareFootage'] += squareFootage;
+                   } else {
+                       subgroupTotals[subgroupName] = {
+                           'count': 1,
+                           'totalSquareFootage': squareFootage
+                       }
+                   }
+
+
+                   var squareFootageNice = parseInt(squareFootage);
+
                    childElementsList.append(
                        `<a class="list-group-item list-group-item-action group-child"
                            data-name="${child.name}">
-                            ${child.id}: ${child.name}
+                            ${child.id}: ${child.name} ( ${squareFootageNice} ft^2 )
                         </a>`
-                   )
+                   );
 
+                   totalSize.add(childSize);
+
+                   totalSquareFootage += squareFootage;
 
                } else {
                    child.material = defaultMaterial;
                }
            }
        });
+
+       // note that for things like floor, sum x * sum y will not map directly to sum of square footage...
+
+       $("#cost-summary").html("");
+
+       for (const subgroupName in subgroupTotals) {
+           const totals = subgroupTotals[subgroupName];
+           const niceSquareFootage = parseInt(totals.totalSquareFootage);
+
+           $("#cost-summary").append(
+               `<div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title">${subgroupName} Total Measurements</h4>
+                        
+                        <p><strong>Count</strong>: ${totals.count}</p>
+                        <p><strong>Square Footage Total</strong>: ${niceSquareFootage} ft^2</p>
+                    </div>
+                </div>`
+           );
+       }
    });
 });
