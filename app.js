@@ -339,11 +339,10 @@ $(function(){
         addSpotLight(scene);
 
         // debug box
-        const box = new THREE.Box3();
-        box.setFromCenterAndSize( new THREE.Vector3( 1, 1, 1 ), new THREE.Vector3( 2, 1, 3 ) );
-
-        const helper = new THREE.Box3Helper( box, 0xffff00 );
-        scene.add( helper );
+        // const box = new THREE.Box3();
+        // box.setFromCenterAndSize( new THREE.Vector3( 1, 1, 1 ), new THREE.Vector3( 2, 1, 3 ) );
+        // const helper = new THREE.Box3Helper( box, 0xffff00 );
+        // scene.add( helper );
 
         // load fbx model and texture
         const objs = [];
