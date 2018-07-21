@@ -54,7 +54,7 @@ function main() {
     const controls = new THREE.OrbitControls( camera, renderer.domElement );
 
     camera.position.set(0, -300, 300);
-    camera.up.set(0, 1, 0);
+    camera.up.set(0, 0, 1);
     camera.lookAt(new THREE.Vector3(20, 20, 100));
     controls.update();
 
@@ -82,6 +82,10 @@ function main() {
 
     loader.load("./schoolhouse.fbx", model => {
         sceneModel = model;
+
+        var box = new THREE.Box3().setFromObject( model );
+        box.center( model.position ); // this re-sets the mesh position
+        model.position.multiplyScalar( - 1 );
 
         directionalLight.target = model;
 
