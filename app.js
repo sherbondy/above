@@ -3,8 +3,10 @@
 /*globals THREE */
 
 var sceneModel = null;
-var activeChildNode = null;
+var activeGroup = null;
 
+// mapping from name prefix to array of elements in group...
+var modelGroups = {};
 
 const defaultMaterial = new THREE.MeshPhongMaterial(
     {
@@ -96,15 +98,23 @@ function main() {
                 console.log("Child:", child.name);
                 child.material = defaultMaterial;
 
-                modelChildrenList.append(
-                    `<a class="list-group-item list-group-item-action model-child"
-                        data-id="${child.id}">
-                        ${child.name}
-                    </a>`
-                );
-
+                var namePrefix = child.name.split('_')[0];
+                if (namePrefix in modelGroups){
+                    modelGroups[namePrefix].push(child.id);
+                } else {
+                    modelGroups[namePrefix] = [child.id];
+                }
             }
         });
+
+        for (const groupName in modelGroups) {
+            modelChildrenList.append(
+                `<a class="list-group-item list-group-item-action model-child"
+                        data-name="${groupName}">
+                        ${groupName}
+                    </a>`
+            );
+        }
 
         scene.add(model);
         objs.push(model);
@@ -132,17 +142,30 @@ $(function(){
    console.log("loaded");
 
    $("#model-children").on('click', '.model-child', function(e){
-       const childID = $(this).data('id');
-       console.log("clicked child", childID);
-       activeChildNode = childID;
+       const groupName = $(this).data('name');
+       console.log("clicked group", groupName);
 
        $('.model-child').removeClass('active');
-       $(this).addClass('active');
+
+       var activeGroupChildren = [];
+
+       if (activeGroup == groupName) {
+           activeGroup = null;
+       } else {
+           activeGroup = groupName;
+           $(this).addClass('active');
+
+           activeGroupChildren = modelGroups[activeGroup];
+       }
 
        sceneModel.children.forEach(function(child) {
            if (child.isMesh) {
-               if (child.id == childID) {
+               if (activeGroupChildren.includes(child.id)) {
                    child.material = highlightMaterial;
+
+                   // const center = child.geometry.boundingSphere.center;
+
+
                } else {
                    child.material = defaultMaterial;
                }
