@@ -57,23 +57,19 @@ function main() {
     const objs = [];
     const loader = new THREE.FBXLoader();
 
-    const phongMaterial = new THREE.MeshPhongMaterial(
+    const defaultMaterial = new THREE.MeshPhongMaterial(
         {
-            ambient: 0x555555,
             color: 0x555555,
             specular: 0xffffff,
-            shininess: 50,
-            shading: THREE.SmoothShading
+            shininess: 50
         }
     );
 
     const highlightMaterial = new THREE.MeshPhongMaterial(
         {
-            ambient: 0xff000,
             color: 0xff000,
             specular: 0xffffff,
-            shininess: 50,
-            shading: THREE.SmoothShading
+            shininess: 50
         }
     );
 
@@ -82,18 +78,28 @@ function main() {
     loader.load("./schoolhouse.fbx", model => {
         window.schoolhouse = model;
 
-        model.material = phongMaterial;
+        directionalLight.target = model;
+
+        const modelChildrenList = $("#model-children");
 
         model.children.forEach(function(child){
             if (child.isMesh) {
                 console.log("Child:", child.name);
                 child.material = highlightMaterial;
+
+                modelChildrenList.append(
+                    `<a class="list-group-item list-group-item-action model-child"
+                        data-id="${child.id}">
+                        ${child.name}
+                    </a>`
+                );
+
             }
         });
 
         scene.add(model);
         objs.push(model);
-        directionalLight.target = model;
+
     });
 
     // animation rendering
@@ -109,4 +115,14 @@ function main() {
 
     return objs;
 }
+
 const objs = main();
+
+
+$(function(){
+   console.log("loaded");
+
+   $("#model-children").on('click', '.model-child', function(e){
+       console.log("clicked child", $(this).data('id'));
+   });
+});
