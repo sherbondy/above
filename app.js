@@ -179,10 +179,10 @@ function recalculateCosts(){
 
     for (const subgroupName in subgroupTotals) {
         const namePrefix = subgroupName.split('_')[0];
-        const selectedMaterialIndex = materialSelections[subgroupName];
+        const selectedMaterialIndex = materialSelections[subgroupName] || 0;
 
         const subgroupMaterialOptions = materialOptions[subgroupName] || EMPTY_MATERIAL_OPTIONS;
-        const baseCostMap = subgroupMaterialOptions[0];
+        const baseCostMap = subgroupMaterialOptions[selectedMaterialIndex];
         const baseCost = Object.values(baseCostMap)[0] || 0;
 
         console.log(subgroupName, selectedMaterialIndex, baseCost);
@@ -250,17 +250,34 @@ function getSquareFootage(group, childSize) {
 }
 
 function renderSubgroupTotals(activeSubgroups){
+    $("#cost-summary").html("");
 
     for (const subgroupName in activeSubgroups) {
         const totals = subgroupTotals[subgroupName];
         const niceSquareFootage = parseInt(totals.totalSquareFootage);
         const totalCost = parseInt(totals.cost);
 
+        const subgroupMaterialOptions = materialOptions[subgroupName] || EMPTY_MATERIAL_OPTIONS;
+
+        var subgroupSelect = `<select class="material-selector" data-subgroup='${subgroupName}'>`;
+        for (var i = 0; i < subgroupMaterialOptions.length; i+=1) {
+            const baseCostMap = subgroupMaterialOptions[i];
+            const materialName = Object.keys(baseCostMap)[0] || 'Default (Cost Unspecified)';
+            const baseCost = Object.values(baseCostMap)[0] || 0;
+
+            const selectedMaterialIndex = materialSelections[subgroupName] || 0;
+
+            const selectedText = (i == selectedMaterialIndex) ? "selected" : "";
+
+            subgroupSelect += `<option value="${i}" ${selectedText}>${materialName}: $${baseCost}</option>`;
+        }
+        subgroupSelect += '</select>';
+
         $("#cost-summary").append(
             `<div class="card">
                     <div class="card-body">
                         <h4 class="card-title">${subgroupName} Total Measurements</h4>
-                        
+                        ${subgroupSelect}
                         <p><strong>Total Cost</strong>: $${totalCost}</p>
                         <p><strong>Count</strong>: ${totals.count}</p>
                         <p><strong>Square Footage Total</strong>: ${niceSquareFootage} ft^2</p>
@@ -508,10 +525,28 @@ $(function(){
 
        // note that for things like floor, sum x * sum y will not map directly to sum of square footage...
 
-       $("#cost-summary").html("");
-
        renderSubgroupTotals(activeSubgroups);
 
 
+
+       $('#cost-summary').on('change', '.material-selector', function(e){
+           const subgroupName = $(this).data('subgroup');
+           const materialIndexStr = $( this ).val();
+
+           var materialIndex = 0;
+           try {
+               materialIndex = parseInt(materialIndexStr);
+           } catch(error) {
+               console.log(error);
+           }
+
+           console.log('selected material: ', materialIndexStr);
+
+           materialSelections[subgroupName] = materialIndex;
+
+           recalculateCosts();
+           renderGroupsList();
+           renderSubgroupTotals(activeSubgroups);
+       });
    });
 });
