@@ -177,6 +177,7 @@ function addSpotLight(scene) {
 
 function recalculateCosts(){
     groupCosts = {};
+    grandTotal = 0;
 
     for (const subgroupName in subgroupTotals) {
         const namePrefix = subgroupName.split('_')[0];
