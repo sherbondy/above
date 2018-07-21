@@ -290,11 +290,13 @@ function renderSubgroupTotals(activeSubgroups){
         }
         subgroupSelect += '</select>';
 
+        const prettyName = subgroupName.replace(/\_/g, " ").replace(/\-/g, " ");
+
         $("#cost-summary").append(
             `<div class="card">
                     <div class="card-body">
-                        <h4 class="card-title">${subgroupName} Total Measurements</h4>
-                        ${subgroupSelect}
+                        <h4 class="card-title">${prettyName}</h4>
+                        <p><strong>Pick Material</strong>: ${subgroupSelect}</p>
                         <p><strong>Total Cost</strong>: $${totalCostPretty}</p>
                         <p><strong>Count</strong>: ${totals.count}</p>
                         <p><strong>Square Footage Total</strong>: ${niceSquareFootage} ft^2</p>
