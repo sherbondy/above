@@ -48,7 +48,7 @@ var EXTERIOR_OPTIONS = [{'Masonry Veneer': 240}, {'Fiber Cement': 180}];
 var WALL_OPTIONS = [{'GYP Paint': 20}, {'Wall Covering': 30}];
 var ROOF_OPTIONS = [{'Acoustic Deck Assembly': 50}];
 var WINDOW_OPTIONS = [{'Double Glazed': 100}, {'Triple Glazed': 150}];
-var DOOR_OPTIONS = [{'Solid Fill Acoustic': 250}, {'HMF Aluminum': 300}];
+var DOOR_OPTIONS = [{'HMF Aluminum': 250}, {'Solid Fill Acoustic': 300}];
 var CHAIR_OPTIONS = [{'IKEA Armchair': 80}];
 var TABLE_OPTIONS = [{'IKEA Table': 120}];
 var DESK_OPTIONS = [{'IKEA Desk': 80}];
@@ -563,6 +563,13 @@ $(function(){
         renderSubgroupTotals(activeSubgroups);
     });
 
+    $("#search-bar").on('change', function(){
+
+    });
+
+    $("#search-form").on('submit', function(e){
+       e.preventDefault();
+    });
 
     const objs = main();
 });
