@@ -33,7 +33,7 @@ hr {
 }
 
 .icon-logo {
-    background: url("logo_palette.svg") center center / 40px 40px no-repeat;
+    background: url("img/logo_palette.svg") center center / 40px 40px no-repeat;
     width: 40px;
     height: 40px;
     display: block;
