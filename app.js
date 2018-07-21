@@ -12,7 +12,9 @@ const defaultMaterial = new THREE.MeshPhongMaterial(
     {
         color: 0xffffff,
         specular: 0xffffff,
-        shininess: 50
+        shininess: 50,
+        transparent: true,
+        opacity: 0.5
     }
 );
 
