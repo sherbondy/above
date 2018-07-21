@@ -7,6 +7,7 @@ const unitsToFt = 8;
 
 var sceneModel = null;
 var activeGroup = null;
+var activeSubgroups = {};
 
 // mapping from name prefix to array of elements in group...
 var modelGroups = {};
@@ -307,12 +308,80 @@ function renderSubgroupTotals(activeSubgroups){
     }
 }
 
+var colores_g = [
+    "#3366cc", "#dc3912", "#ff9900", "#109618", "#990099", "#0099c6", "#dd4477", "#66aa00",
+    "#b82e2e", "#316395", "#994499", "#22aa99", "#aaaa11", "#6633cc", "#e67300", "#8b0707",
+    "#651067", "#329262", "#5574a6", "#3b3eac"
+];
+
 
 $(function(){
     console.log("loaded dom");
 
+    function loadAnalyticalModel(){
 
-// simplified on three.js/examples/webgl_loader_fbx.html
+        $.get("./schoolhouse.xml", function(response){
+            console.log("loaded schoolhouse gbxml file: ", response);
+            // Building -> Space -> Shell Geometry -> Closed Shell to three geometry with faces...
+            window.buildingSpec = response;
+            var campus = window.buildingSpec.getElementsByTagName("Campus")[0];
+            var building = campus.getElementsByTagName("Building")[0];
+            var spaces = building.getElementsByTagName("Space");
+
+            for (var i = 0; i < spaces.length; i+=1) {
+                const space = spaces[i];
+                const spaceNameNode = space.getElementsByTagName("Name")[0];
+                const spaceName = spaceNameNode.childNodes[0];
+
+                const geometry = space.getElementsByTagName("ShellGeometry")[0];
+                const shell = geometry.getElementsByTagName("ClosedShell")[0];
+                const polyLoops = shell.getElementsByTagName("PolyLoop");
+
+                var threeGeometry = new THREE.Geometry();
+
+                var vertexCount = 0;
+
+                for (var j = 0; j < polyLoops.length; j+=1) {
+                    const points = polyLoops[j].getElementsByTagName("CartesianPoint");
+
+                    const startingVertex = vertexCount;
+
+                    // @TODO: fix for closed shells with faces made of something other than than 4 points...
+                    for (var k = 0; k < points.length; k+=1) {
+                        // console.log(points.length);
+                        const coords = points[k].getElementsByTagName("Coordinate");
+                        const x = coordFloat(coords[0]);
+                        const y = coordFloat(coords[1]);
+                        const z = coordFloat(coords[2]);
+                        const point = new THREE.Vector3(x, y, z);
+
+                        threeGeometry.vertices.push(point);
+                        vertexCount += 1;
+                    }
+
+                    // (A, B, C), (A, C, D)
+
+                    const faceA = new THREE.Face3(vertexCount - 4, vertexCount - 3, vertexCount - 2);
+                    const faceB = new THREE.Face3(vertexCount - 4, vertexCount - 2, vertexCount - 1);
+
+                    threeGeometry.faces.push(faceA);
+                    threeGeometry.faces.push(faceB);
+                }
+
+                threeGeometry.computeFaceNormals();
+                threeGeometry.computeVertexNormals();
+
+                const colorStr = colores_g[i % colores_g.length];
+                const threeColor = new THREE.Color(colorStr);
+
+                const spaceMaterial = new THREE.MeshStandardMaterial( { color : threeColor } );
+                const spaceMesh = new THREE.Mesh(threeGeometry, spaceMaterial);
+                sceneModel.add(spaceMesh);
+            }
+        });
+    }
+
+
     window.main = function() {
         // renderer
         const renderer = new THREE.WebGLRenderer({antialias: true});
@@ -414,158 +483,86 @@ $(function(){
             requestAnimationFrame(animate);
         })();
 
+        loadAnalyticalModel();
+
         return objs;
-    }
+    };
 
-    const objs = main();
+    $("#model-groups").on('click', '.model-group', function(e){
+        const groupName = $(this).data('name');
+        console.log("clicked group", groupName);
 
+        $('.model-group').removeClass('active');
 
+        var activeGroupChildren = [];
+        activeSubgroups = {};
 
-    // now xml model...
+        if (activeGroup == groupName) {
+            activeGroup = null;
+        } else {
+            activeGroup = groupName;
+            $(this).addClass('active');
 
+            activeGroupChildren = modelGroups[activeGroup];
+        }
 
+        var childElementsList = $("#child-elements");
 
-    var colores_g = [
-        "#3366cc", "#dc3912", "#ff9900", "#109618", "#990099", "#0099c6", "#dd4477", "#66aa00",
-        "#b82e2e", "#316395", "#994499", "#22aa99", "#aaaa11", "#6633cc", "#e67300", "#8b0707",
-        "#651067", "#329262", "#5574a6", "#3b3eac"
-    ];
+        childElementsList.html("");
 
-    $.get("./schoolhouse.xml", function(response){
-       console.log("loaded schoolhouse gbxml file: ", response);
-       // Building -> Space -> Shell Geometry -> Closed Shell to three geometry with faces...
-       window.buildingSpec = response;
-       var campus = window.buildingSpec.getElementsByTagName("Campus")[0];
-       var building = campus.getElementsByTagName("Building")[0];
-       var spaces = building.getElementsByTagName("Space");
+        sceneModel.children.forEach(function(child) {
+            if (child.isMesh) {
+                if (activeGroupChildren.includes(child.id)) {
+                    child.material = highlightMaterial;
 
-       for (var i = 0; i < spaces.length; i+=1) {
-           const space = spaces[i];
-           const spaceNameNode = space.getElementsByTagName("Name")[0];
-           const spaceName = spaceNameNode.childNodes[0];
+                    // const center = child.geometry.boundingSphere.center;
+                    const subgroupName = getSubgroupName(child);
 
-           const geometry = space.getElementsByTagName("ShellGeometry")[0];
-           const shell = geometry.getElementsByTagName("ClosedShell")[0];
-           const polyLoops = shell.getElementsByTagName("PolyLoop");
+                    activeSubgroups[subgroupName] = true;
 
-           var threeGeometry = new THREE.Geometry();
+                    let childSize = elementSizes[child.id];
+                    let squareFootage = getSquareFootage(activeGroup, childSize);
+                    var squareFootageNice = parseInt(squareFootage);
 
-           var vertexCount = 0;
-
-           for (var j = 0; j < polyLoops.length; j+=1) {
-               const points = polyLoops[j].getElementsByTagName("CartesianPoint");
-
-               const startingVertex = vertexCount;
-
-               // @TODO: fix for closed shells with faces made of something other than than 4 points...
-               for (var k = 0; k < points.length; k+=1) {
-                   // console.log(points.length);
-                   const coords = points[k].getElementsByTagName("Coordinate");
-                   const x = coordFloat(coords[0]);
-                   const y = coordFloat(coords[1]);
-                   const z = coordFloat(coords[2]);
-                   const point = new THREE.Vector3(x, y, z);
-
-                   threeGeometry.vertices.push(point);
-                   vertexCount += 1;
-               }
-
-               // (A, B, C), (A, C, D)
-
-               const faceA = new THREE.Face3(vertexCount - 4, vertexCount - 3, vertexCount - 2);
-               const faceB = new THREE.Face3(vertexCount - 4, vertexCount - 2, vertexCount - 1);
-
-               threeGeometry.faces.push(faceA);
-               threeGeometry.faces.push(faceB);
-           }
-
-           threeGeometry.computeFaceNormals();
-           threeGeometry.computeVertexNormals();
-
-           const colorStr = colores_g[i % colores_g.length];
-           const threeColor = new THREE.Color(colorStr);
-
-           const spaceMaterial = new THREE.MeshStandardMaterial( { color : threeColor } );
-           const spaceMesh = new THREE.Mesh(threeGeometry, spaceMaterial);
-           sceneModel.add(spaceMesh);
-       }
-   });
-
-
-   $("#model-groups").on('click', '.model-group', function(e){
-       const groupName = $(this).data('name');
-       console.log("clicked group", groupName);
-
-       $('.model-group').removeClass('active');
-
-       var activeGroupChildren = [];
-
-       if (activeGroup == groupName) {
-           activeGroup = null;
-       } else {
-           activeGroup = groupName;
-           $(this).addClass('active');
-
-           activeGroupChildren = modelGroups[activeGroup];
-       }
-
-       var childElementsList = $("#child-elements");
-
-       childElementsList.html("");
-
-       var activeSubgroups = {};
-
-       sceneModel.children.forEach(function(child) {
-           if (child.isMesh) {
-               if (activeGroupChildren.includes(child.id)) {
-                   child.material = highlightMaterial;
-
-                   // const center = child.geometry.boundingSphere.center;
-                   const subgroupName = getSubgroupName(child);
-
-                   activeSubgroups[subgroupName] = true;
-
-                   let childSize = elementSizes[child.id];
-                   let squareFootage = getSquareFootage(activeGroup, childSize);
-                   var squareFootageNice = parseInt(squareFootage);
-
-                   childElementsList.append(
-                       `<a class="list-group-item list-group-item-action group-child"
+                    childElementsList.append(
+                        `<a class="list-group-item list-group-item-action group-child"
                            data-name="${child.name}">
                             ${child.id}: ${child.name} ( ${squareFootageNice} ft^2 )
                         </a>`
-                   );
+                    );
 
-               } else {
-                   child.material = defaultMaterial;
-               }
-           }
-       });
+                } else {
+                    child.material = defaultMaterial;
+                }
+            }
+        });
 
-       // note that for things like floor, sum x * sum y will not map directly to sum of square footage...
+        renderSubgroupTotals(activeSubgroups);
 
-       renderSubgroupTotals(activeSubgroups);
+        // note that for things like floor, sum x * sum y will not map directly to sum of square footage...
+    });
 
 
+    $('#cost-summary').on('change', '.material-selector', function(e){
+        const subgroupName = $(this).data('subgroup');
+        const materialIndexStr = $( this ).val();
 
-       $('#cost-summary').on('change', '.material-selector', function(e){
-           const subgroupName = $(this).data('subgroup');
-           const materialIndexStr = $( this ).val();
+        var materialIndex = 0;
+        try {
+            materialIndex = parseInt(materialIndexStr);
+        } catch(error) {
+            console.log(error);
+        }
 
-           var materialIndex = 0;
-           try {
-               materialIndex = parseInt(materialIndexStr);
-           } catch(error) {
-               console.log(error);
-           }
+        console.log('selected material: ', materialIndexStr);
 
-           console.log('selected material: ', materialIndexStr);
+        materialSelections[subgroupName] = materialIndex;
 
-           materialSelections[subgroupName] = materialIndex;
+        recalculateCosts();
+        renderGroupsList();
+        renderSubgroupTotals(activeSubgroups);
+    });
 
-           recalculateCosts();
-           renderGroupsList();
-           renderSubgroupTotals(activeSubgroups);
-       });
-   });
+
+    const objs = main();
 });
