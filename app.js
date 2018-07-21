@@ -93,7 +93,7 @@ function main() {
 
         directionalLight.target = model;
 
-        const modelChildrenList = $("#model-children");
+        const modelChildrenList = $("#model-groups");
 
         model.children.forEach(function(child){
             if (child.isMesh) {
@@ -111,7 +111,7 @@ function main() {
 
         for (const groupName in modelGroups) {
             modelChildrenList.append(
-                `<a class="list-group-item list-group-item-action model-child"
+                `<a class="list-group-item list-group-item-action model-group"
                         data-name="${groupName}">
                         ${groupName}
                     </a>`
@@ -143,11 +143,11 @@ const objs = main();
 $(function(){
    console.log("loaded");
 
-   $("#model-children").on('click', '.model-child', function(e){
+   $("#model-groups").on('click', '.model-group', function(e){
        const groupName = $(this).data('name');
        console.log("clicked group", groupName);
 
-       $('.model-child').removeClass('active');
+       $('.model-group').removeClass('active');
 
        var activeGroupChildren = [];
 
@@ -160,12 +160,23 @@ $(function(){
            activeGroupChildren = modelGroups[activeGroup];
        }
 
+       var childElementsList = $("#child-elements");
+
+       childElementsList.html("");
+
        sceneModel.children.forEach(function(child) {
            if (child.isMesh) {
                if (activeGroupChildren.includes(child.id)) {
                    child.material = highlightMaterial;
 
                    // const center = child.geometry.boundingSphere.center;
+
+                   childElementsList.append(
+                       `<a class="list-group-item list-group-item-action group-child"
+                           data-name="${child.name}">
+                            ${child.id}: ${child.name}
+                        </a>`
+                   )
 
 
                } else {
