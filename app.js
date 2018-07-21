@@ -58,11 +58,38 @@ function main() {
     const loader = new THREE.FBXLoader();
 
     const phongMaterial = new THREE.MeshPhongMaterial(
-        { ambient: 0x555555, color: 0x555555, specular: 0xffffff, shininess: 50, shading: THREE.SmoothShading }
+        {
+            ambient: 0x555555,
+            color: 0x555555,
+            specular: 0xffffff,
+            shininess: 50,
+            shading: THREE.SmoothShading
+        }
     );
 
+    const highlightMaterial = new THREE.MeshPhongMaterial(
+        {
+            ambient: 0xff000,
+            color: 0xff000,
+            specular: 0xffffff,
+            shininess: 50,
+            shading: THREE.SmoothShading
+        }
+    );
+
+
     loader.load("./schoolhouse.fbx", model => {
+        window.schoolhouse = model;
+
         model.material = phongMaterial;
+
+        model.children.forEach(function(child){
+            if (child.isMesh) {
+                console.log("Child:", child.name);
+                child.material = highlightMaterial;
+            }
+        });
+
         scene.add(model);
         objs.push(model);
         directionalLight.target = model;
