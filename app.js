@@ -206,6 +206,10 @@ function recalculateCosts(){
     }
 }
 
+function formatMoney(amount) {
+    return amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+}
+
 function renderGroupsList(){
     const modelChildrenList = $("#model-groups");
 
@@ -214,10 +218,14 @@ function renderGroupsList(){
     for (const groupName in modelGroups) {
         const groupCost = groupCosts[groupName];
 
+        const groupCostInt = formatMoney(groupCost);
+
+        const activeText = (groupName == activeGroup) ? "active" : "";
+
         modelChildrenList.append(
-            `<a class="list-group-item list-group-item-action model-group"
+            `<a class="list-group-item list-group-item-action model-group ${activeText}"
                         data-name="${groupName}">
-                ${groupName}: $${groupCost}
+                ${groupName}: $${groupCostInt}
             </a>`
         );
     }
@@ -255,7 +263,7 @@ function renderSubgroupTotals(activeSubgroups){
     for (const subgroupName in activeSubgroups) {
         const totals = subgroupTotals[subgroupName];
         const niceSquareFootage = parseInt(totals.totalSquareFootage);
-        const totalCost = parseInt(totals.cost);
+        const totalCostPretty = formatMoney(totals.cost);
 
         const subgroupMaterialOptions = materialOptions[subgroupName] || EMPTY_MATERIAL_OPTIONS;
 
@@ -278,7 +286,7 @@ function renderSubgroupTotals(activeSubgroups){
                     <div class="card-body">
                         <h4 class="card-title">${subgroupName} Total Measurements</h4>
                         ${subgroupSelect}
-                        <p><strong>Total Cost</strong>: $${totalCost}</p>
+                        <p><strong>Total Cost</strong>: $${totalCostPretty}</p>
                         <p><strong>Count</strong>: ${totals.count}</p>
                         <p><strong>Square Footage Total</strong>: ${niceSquareFootage} ft^2</p>
                     </div>
